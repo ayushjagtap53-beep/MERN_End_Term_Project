@@ -106,26 +106,17 @@ const sampleDoctors = [
   }
 ];
 
-const seed = async () => {
+const seedData = async (purge = false) => {
   try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri || uri.includes('PASTE_YOUR_MONGODB_URI_HERE')) {
-      console.error('\x1b[31m✖ Cannot seed database: MONGODB_URI is not set in server/.env.\x1b[0m');
-      console.log('👉 Please paste your MongoDB connection string in server/.env and run: npm run seed');
-      process.exit(1);
+    if (purge) {
+      console.log('\x1b[33mPurging existing MediFlow test data...\x1b[0m');
+      await Promise.all([
+        User.deleteMany({}),
+        DoctorProfile.deleteMany({}),
+        Appointment.deleteMany({}),
+        Prescription.deleteMany({})
+      ]);
     }
-
-    console.log('\x1b[33mConnecting to MongoDB...\x1b[0m');
-    await mongoose.connect(uri);
-    console.log('\x1b[32m✔ Connected to MongoDB successfully.\x1b[0m');
-
-    console.log('\x1b[33mPurging existing MediFlow test data...\x1b[0m');
-    await Promise.all([
-      User.deleteMany({}),
-      DoctorProfile.deleteMany({}),
-      Appointment.deleteMany({}),
-      Prescription.deleteMany({})
-    ]);
 
     // 1. Create Demo Patient
     console.log('\x1b[33mCreating Demo Patient account...\x1b[0m');
@@ -172,13 +163,13 @@ const seed = async () => {
 
     // 3. Create sample appointments for demo doctor (Rachel Adams)
     console.log('\x1b[33mCreating realistic sample appointments with triage telemetry...\x1b[0m');
-    const demoDocProfile = createdDoctorProfiles.find(d => d.specialty === 'General Medicine');
+    const demoDocProfile = createdDoctorProfiles.find((d) => d.specialty === 'General Medicine');
 
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
 
     // High urgency sample appointment
-    const urgentApp = await Appointment.create({
+    await Appointment.create({
       referenceCode: 'MDF-2026-URG01',
       patient: demoPatient._id,
       doctor: demoDocProfile._id,
@@ -263,12 +254,31 @@ const seed = async () => {
     console.log(`\x1b[32mPatient Login: patient@mediflow.com  | Password: password123\x1b[0m`);
     console.log(`\x1b[32mDoctor Login:  doctor@mediflow.com   | Password: password123\x1b[0m`);
     console.log(`\x1b[36m========================\x1b[0m\n`);
-
-    process.exit(0);
   } catch (error) {
     console.error('\x1b[31m✖ Seed error:\x1b[0m', error);
-    process.exit(1);
+    throw error;
   }
 };
 
-seed();
+// Standalone execution
+if (require.main === module) {
+  (async () => {
+    try {
+      const uri = process.env.MONGODB_URI;
+      const { sanitizeMongoUri } = require('../config/db');
+      const sanitized = sanitizeMongoUri(uri);
+
+      console.log('\x1b[33mConnecting to MongoDB for standalone seed...\x1b[0m');
+      await mongoose.connect(sanitized);
+      console.log('\x1b[32m✔ Connected to MongoDB successfully.\x1b[0m');
+
+      await seedData(true);
+      process.exit(0);
+    } catch (err) {
+      console.error('CLI Seed failed:', err.message);
+      process.exit(1);
+    }
+  })();
+}
+
+module.exports = { seedData };

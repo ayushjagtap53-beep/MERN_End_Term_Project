@@ -18,10 +18,25 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 
+const DoctorProfile = require('./models/DoctorProfile');
+const { seedData } = require('./utils/seedData');
+
 const app = express();
 
-// Database Connection
-connectDB();
+// Database Connection with Auto-seed if empty
+connectDB().then(async (conn) => {
+  if (conn) {
+    try {
+      const count = await DoctorProfile.countDocuments();
+      if (count === 0) {
+        console.log('\x1b[33m🌱 Database empty. Auto-seeding specialist doctors and demo accounts...\x1b[0m');
+        await seedData(false);
+      }
+    } catch (e) {
+      console.warn('Auto-seed check failed:', e.message);
+    }
+  }
+});
 
 // Core Middleware
 app.use(cors({
@@ -51,7 +66,9 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database: {
       status: dbStatus,
-      connected: mongoose.connection.readyState === 1
+      connected: mongoose.connection.readyState === 1,
+      host: mongoose.connection.host,
+      name: mongoose.connection.name
     }
   });
 });
