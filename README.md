@@ -226,11 +226,11 @@ Pre-seeded credentials available for immediate testing:
 ```text
 Project Name: MediFlow - Smart Healthcare Appointment & Clinical Triage System
 
-Student Name: [Your Name]
+Student Name: Ayush Jagtap
 
 Problem Statement: Traditional clinic appointments lack pre-consultation triage, causing critical patients to wait behind routine checkups while clinic schedules suffer from double-booking and disconnected prescription workflows.
 
-GitHub Repository: [Your GitHub Repo URL]
+GitHub Repository: https://github.com/ayushjagtap53-beep/MERN_End_Term_Project
 
 Deployed Application / Build: [Your Deployed Link, e.g. Vercel/Render]
 
