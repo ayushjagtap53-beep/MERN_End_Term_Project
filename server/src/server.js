@@ -64,8 +64,8 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Health check endpoint (accessible on both /api/health and /health)
+const handleHealthCheck = (req, res) => {
   const dbStateMap = {
     0: 'Disconnected',
     1: 'Connected',
@@ -86,14 +86,26 @@ app.get('/api/health', (req, res) => {
       name: mongoose.connection.name
     }
   });
-});
+};
 
-// Mount Routes
+app.get('/api/health', handleHealthCheck);
+app.get('/health', handleHealthCheck);
+
+// Mount Routes (supporting both /api/* and /* prefixes for flexibility)
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/doctors', doctorRoutes);
+app.use('/doctors', doctorRoutes);
+
 app.use('/api/appointments', appointmentRoutes);
+app.use('/appointments', appointmentRoutes);
+
 app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/prescriptions', prescriptionRoutes);
+
 app.use('/api/stats', statsRoutes);
+app.use('/stats', statsRoutes);
 
 // Fallback 404 for undefined routes
 app.use((req, res, next) => {
